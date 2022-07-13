@@ -16,13 +16,9 @@ fn main() {
     }
 }
 
-fn handle_connection(mut stream: TcpStream) -> [u8; 1024] {
+fn handle_connection(mut stream: TcpStream) {
     let mut buffer = [0; 1024];
 
     stream.read(&mut buffer).unwrap();
-    buffer
-}
-
-fn print_msg (buffer: &[u8]) {
     println!("Message: {}", String::from_utf8_lossy(&buffer[..]));
 }
