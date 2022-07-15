@@ -10,16 +10,18 @@ use std::path::Path;
 fn main() {
     let ip_addr = "localhost:3453";
     let msg = String::from("never gonna give you up!");
-    tcp_send_msg(&ip_addr, &msg);
+    //tcp_send_msg(&ip_addr, &msg);
 
     // query file path from user
     let file_path = Path::new("/home/obsidian/Projects/rust/FileTrain/client/test.txt");
-    //tcp_send_file(&ip_addr, &file_path);
+    tcp_send_file(&ip_addr, &file_path);
 
 }
 
 // Send file over a tcp stream
 fn tcp_send_file(ip_addr: &str, file_path: &Path) {
+// Also send file name and size metadata
+
     // Create stream 
     let mut stream = TcpStream::connect(ip_addr).unwrap();
     // Get file and convert it into bytes
@@ -27,14 +29,14 @@ fn tcp_send_file(ip_addr: &str, file_path: &Path) {
     //println!("{}",get_file(file_path));
 
     // Send message and notify client
-    stream.write(file.as_bytes()).unwrap();
+    stream.write(&file).unwrap();
     println!("File sent");
 }
 
 // Open a file and handle possible errors
-fn get_file(file_path: &Path) -> String {
+fn get_file(file_path: &Path) -> Vec<u8> {
     // Open file
-    std::fs::read_to_string(file_path).unwrap()
+    std::fs::read(file_path).unwrap()
 }
 
 // Send a message over a tcp stream
