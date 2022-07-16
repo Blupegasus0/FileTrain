@@ -16,22 +16,48 @@ fn main() {
     }
 }
 
-fn handle_connection(mut stream: TcpStream) {
-    let mut buffer = [0; 1024];
+enum data_type {
+    file,
+    text,
+    invalid,
+}
 
+fn handle_connection(mut stream: TcpStream) {
+    // Read in buffer and handle any errors
+    let mut buffer = [0; 1024];
     stream.read(&mut buffer).unwrap();
 
     // Recieve data so this method knows what type of data its is recieving
     // and use that data to choose which function to call.
 
+    // Define possible data prefixes
+    let file = String::from("FILE");
+    let text = String::from("TEXT");
+    let prefix = String::from_utf8((&buffer[..4]).to_vec()).unwrap();
+
+    // Assign the data prefix to the appropriate enum type
+    let data_type = match &prefix {
+        file => data_type::file,
+        text => data_type::text,
+        _ => data_type::invalid,
+    };
+    println!("{}", prefix);
+
+
     // After the metadata is read, remove it appropriately and pass it to the 
     // appropriate function.
 
-    // if the data is text then:
-    recieve_text(&buffer);
+    // Remove the prefix from the data`
 
-    // if the data is a file then:
-    recieve_file(&buffer);
+    // Pass the data to the appropriate function
+    match data_type {
+        //data_type::file => recieve_file(&buffer),
+        //data_type::text => recieve_text(&buffer),
+        //data_type::invalid => panic!("Invalid sufix"),
+        data_type::file => println!("file"),
+        data_type::text => println!("text"),
+        data_type::invalid => println!("invalid"),
+    }
 }
 
 fn recieve_file(&buffer: &[u8; 1024]) {
@@ -39,7 +65,6 @@ fn recieve_file(&buffer: &[u8; 1024]) {
         // Create new file and give it the name recieved
         let file_name = "recieved.txt";
 
-        //let file = std::fs::new(file_name)
         let mut file = std::fs::File::options()
         .append(true)
         .write(true)
@@ -48,8 +73,9 @@ fn recieve_file(&buffer: &[u8; 1024]) {
         .unwrap();
 
     // Append the buffer to the file
-    file.write_all(&buffer);
+    file.write(&buffer);
     //file.write(b"appended");
+    println!("new buffer");
     
 }
 
