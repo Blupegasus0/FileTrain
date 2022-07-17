@@ -16,6 +16,7 @@ fn main() {
     }
 }
 
+// List of data transfer types
 enum data_type {
     file,
     text,
@@ -36,11 +37,21 @@ fn handle_connection(mut stream: TcpStream) {
     let prefix = String::from_utf8((&buffer[..4]).to_vec()).unwrap();
 
     // Assign the data prefix to the appropriate enum type
-    let data_type = match &prefix {
+    /*let data_type = match &prefix {
         file => data_type::file,
         text => data_type::text,
         _ => data_type::invalid,
-    };
+    };*/
+
+
+    let data_type;
+    if &prefix == &file {
+        data_type = data_type::file;
+    } else if &prefix == &text {
+        data_type = data_type::text;
+    } else {
+        data_type = data_type::invalid;
+    }
     println!("{}", prefix);
 
 
@@ -51,12 +62,9 @@ fn handle_connection(mut stream: TcpStream) {
 
     // Pass the data to the appropriate function
     match data_type {
-        //data_type::file => recieve_file(&buffer),
-        //data_type::text => recieve_text(&buffer),
-        //data_type::invalid => panic!("Invalid sufix"),
-        data_type::file => println!("file"),
-        data_type::text => println!("text"),
-        data_type::invalid => println!("invalid"),
+        data_type::file => recieve_file(&buffer),
+        data_type::text => recieve_text(&buffer),
+        data_type::invalid => panic!("Invalid sufix"),
     }
 }
 
