@@ -2,7 +2,7 @@
 
 use std::io::Write;
 use std::net::TcpStream;
-use std::fs::File;
+use std::fs;
 use std::path::Path;
 //use std::str::from_utf8;
 
@@ -20,13 +20,15 @@ fn main() {
 
 // Send file over a tcp stream
 fn tcp_send_file(ip_addr: &str, file_path: &Path) {
-// Also send file name and size metadata
-
     // Create stream 
     let mut stream = TcpStream::connect(ip_addr).unwrap();
     // Get file and convert it into bytes
     let file = get_file(file_path);
-    //println!("{}",get_file(file_path));
+
+    // Append data type(FILE), file size(bytes) and
+    // file name to the end of the file
+
+    // Encrypt the file ?
 
     // Send message and notify client
     stream.write(&file).unwrap();
@@ -45,7 +47,25 @@ fn tcp_send_msg(ip_addr: &str, msg: &String) {
     let mut stream = TcpStream::connect(ip_addr).unwrap();
     let msg = msg.as_bytes();
 
+    // Append data type (TEXT) and data size (bytes) to 
+    // the beginning of the message 
+    
+    // Encrypt the message ?
+
     // Send message and notify client
     stream.write(msg).unwrap();
     println!("Sent message");
+}
+
+fn pair(ip_addr: &str,) -> bool {
+    let is_paired: bool;
+    // Send a signal to the server that {device name} is 
+    // trying to connect.
+    // If the server accepts then set "is_paired" to true
+    
+    
+    // return the value of is_paired
+    //is_paired
+    true
+
 }
