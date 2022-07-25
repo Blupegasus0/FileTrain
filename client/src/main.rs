@@ -58,14 +58,16 @@ fn tcp_send_msg(ip_addr: &str, msg: &String) {
 }
 
 fn pair(ip_addr: &str,) -> bool {
-    let is_paired: bool;
+    let is_paired = false;
     // Send a signal to the server that {device name} is 
     // trying to connect.
     // If the server accepts then set "is_paired" to true
+
+    // This is where the key and nonce are shared
     
     
     // return the value of is_paired
     //is_paired
-    true
+    is_paired
 
 }

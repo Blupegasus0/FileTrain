@@ -116,4 +116,5 @@ fn recieve_input(){}
 
 
 fn pair_request(buffer: &[u8; BUFFER_SIZE]) {
+    // this is where the key and nonce are shared
 }
