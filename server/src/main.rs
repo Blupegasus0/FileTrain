@@ -1,5 +1,10 @@
 // Server
 
+use anyhow::anyhow;
+use chacha20poly1305::{    
+    aead::{stream, Aead, NewAead},                                                                                                                                                            
+    XChaCha20Poly1305,    
+};    
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::fs;
@@ -75,10 +80,15 @@ fn handle_connection(mut stream: TcpStream) {
 
     // Pass the data to the appropriate function
     match data_type {
-        data_type::file => recieve_file(&buffer),
-        data_type::pair => pair_request(&buffer),
+        ///// FOR TESTING ONLY
+        data_type::file => recieve_text(&buffer),
+        data_type::pair => recieve_text(&buffer),
         data_type::text => recieve_text(&buffer),
-        data_type::invalid => panic!("Invalid prefix"),
+        data_type::invalid => recieve_text(&buffer),
+        //data_type::file => recieve_file(&buffer),
+        //data_type::pair => pair_request(&buffer),
+        //data_type::text => recieve_text(&buffer),
+        //data_type::invalid => panic!("Invalid prefix"),
     }
 }
 
@@ -101,6 +111,12 @@ fn recieve_file(&buffer: &[u8; BUFFER_SIZE]) {
     
 }
 
+
+//// DECRYPTION TEST FUNCTION 
+fn recieve(buffer: &[u8; BUFFER_SIZE]) {
+    // recieve and print text
+    println!("Message: {}", String::from_utf8_lossy(&buffer[..]));
+}
 
 fn recieve_text(buffer: &[u8; BUFFER_SIZE]) {
     // recieve and print text
