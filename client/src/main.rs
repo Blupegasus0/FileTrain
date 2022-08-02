@@ -44,12 +44,13 @@ fn tcp_send_file(ip_addr: &str, file_path: &Path)
     // Create and fill test key and nonce
     let mut key = [0u8; 32];
     let mut nonce = [0u8; 19];
-    OsRng.fill_bytes(&mut key);
-    OsRng.fill_bytes(&mut nonce);
+    //key = b"thisismykeyitisreallysupersecret";
+    //nonce = b"thisnonceitissecure";
+    //OsRng.fill_bytes(&mut key);
+    //OsRng.fill_bytes(&mut nonce);
 
-    println!("key: {}", key);
-    println!("nonce: {}", nonce);
     
+    // Create encryptors 
     let aead = XChaCha20Poly1305::new(key.as_ref().into());
     let mut stream_encryptor = stream::EncryptorBE32::from_aead(aead, nonce.as_ref().into());
 

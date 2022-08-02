@@ -40,7 +40,8 @@ fn handle_connection(mut stream: TcpStream) {
     // Decrypt data ?
 
     // convert data to a string
-    let data_str = String::from_utf8((&mut buffer).to_vec()).unwrap();
+    //DISABLED
+    //let data_str = String::from_utf8((&mut buffer).to_vec()).unwrap();
 
     // Recieve metadata so this function knows what type of data its is recieving
     // and use that data to choose which function to call.
@@ -49,7 +50,8 @@ fn handle_connection(mut stream: TcpStream) {
     let file = String::from("FILE");
     let text = String::from("TEXT");
     let pair = String::from("PAIR");    
-    let prefix = String::from_utf8((&buffer[..4]).to_vec()).unwrap();
+    // PREFIX DISABLED
+    let prefix = file.clone();//String::from_utf8((&buffer[..4]).to_vec()).unwrap();
 
 
     // Assign the data prefix to the appropriate enum type
@@ -81,10 +83,10 @@ fn handle_connection(mut stream: TcpStream) {
     // Pass the data to the appropriate function
     match data_type {
         ///// FOR TESTING ONLY
-        data_type::file => recieve_text(&buffer),
-        data_type::pair => recieve_text(&buffer),
-        data_type::text => recieve_text(&buffer),
-        data_type::invalid => recieve_text(&buffer),
+        data_type::file => recieve(&buffer),
+        data_type::pair => recieve(&buffer),
+        data_type::text => recieve(&buffer),
+        data_type::invalid => recieve(&buffer),
         //data_type::file => recieve_file(&buffer),
         //data_type::pair => pair_request(&buffer),
         //data_type::text => recieve_text(&buffer),
@@ -114,6 +116,51 @@ fn recieve_file(&buffer: &[u8; BUFFER_SIZE]) {
 
 //// DECRYPTION TEST FUNCTION 
 fn recieve(buffer: &[u8; BUFFER_SIZE]) {
+    // Parameters: 
+    // encrypted_file_path  
+    // output_path
+    // key
+    // nonce
+
+    let output_path = "long_decrypt.txt";
+
+    let mut key = [0u8; 32];
+    let mut nonce = [0u8; 19];
+
+    let aead = XChaCha20Poly1305::new(key.as_ref().into());
+    let mut stream_decryptor = stream::DecryptorBE32::from_aead(aead, nonce.as_ref().into());
+
+    const BUFFER_LEN: usize = 500 + 16;
+    let mut buffer = buffer;
+    //let mut buffer = [0u8; BUFFER_LEN];
+
+
+    //let mut encrypted_file = File::open(encrypted_file_path)?;
+    let mut output_file = fs::File::create(output_path);
+
+    loop {
+        //let read_count = encrypted_file.read(&mut buffer);
+        let read_count = buffer.len();
+
+        if read_count == BUFFER_LEN { 
+            let plaintext = stream_decryptor
+                .decrypt_next(buffer.as_slice())
+                .map_err(|e| anyhow!("Decrypting large file: {}", e));
+
+            println!("{}", String::from_utf8_lossy(&plaintext.unwrap()));
+        } else if read_count == 0 {
+            break;
+        } else {
+            let plaintext = stream_decryptor
+                .decrypt_last(&buffer[..read_count])
+                .map_err(|e| anyhow!("Decrypting large: {}", e));
+
+            println!("{}", String::from_utf8_lossy(&plaintext.unwrap()));
+            break;
+        }
+
+    }
+
     // recieve and print text
     println!("Message: {}", String::from_utf8_lossy(&buffer[..]));
 }
