@@ -14,7 +14,7 @@ const BUFFER_SIZE: usize = 1024;
 const PORT: u16 = 3453;
 
 fn main() {
-    // create listener and bind it to localhost port 7878
+    // create listener and bind it to localhost port 3453
     let listener = TcpListener::bind("localhost:3453").unwrap();
 
     // listen for incoming connections
@@ -31,6 +31,61 @@ enum data_type {
     text,
     invalid,
 }
+
+fn decrypt_tcp(
+    output_path: &str,
+    key: &[u8; 32],
+    nonce: &[u8; 19],
+) -> Result<(), anyhow::Error> {
+    // create listener and bind it to localhost port 8081
+    let listener = TcpListener::bind("localhost:8081").unwrap();
+    let mut buffer = [0; BUFFER_SIZE];
+
+    // Initialize decryption variables 
+    let aead = XChaCha20Poly1305::new(key.as_ref().into());
+    let mut stream_decryptor = stream::DecryptorBE32::from_aead(aead, nonce.as_ref().into());
+
+    // Use stream as source
+    let mut output_file = File::create(output_path)?;
+
+    // listen for incoming connections
+    for stream in listener.incoming() {
+        let mut stream = stream.unwrap();
+    
+        // test to see how many times to loop iterates
+        println!("looped");
+
+        // Read in buffer 
+        let read_count = stream.read(&mut buffer).unwrap();
+
+        // Shows the number of bytes read
+        println!("{}", read_count);
+
+        if read_count == BUFFER_SIZE { 
+            // If the buffer is full then expect more packets
+            let plaintext = stream_decryptor
+                .decrypt_next(buffer.as_slice())
+                .map_err(|e| anyhow!("Decrypting large file 1: {}", e))?;
+
+            output_file.write(&plaintext)?;
+        } else if read_count == 0 {
+            // If there is no more data ... end
+            break;
+        } else {
+            // If the buffer is neither empty nor full then this is the last packet
+            let plaintext = stream_decryptor
+                .decrypt_last(&buffer[..read_count])
+                .map_err(|e| anyhow!("Decrypting large 2: {}", e))?;
+
+            output_file.write(&plaintext)?;
+            break;
+        }
+
+    }
+
+    Ok(())
+}
+
 
 fn handle_connection(mut stream: TcpStream) {
     // Read in buffer and handle any errors
