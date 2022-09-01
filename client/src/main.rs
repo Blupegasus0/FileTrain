@@ -79,21 +79,6 @@ fn encrypt_tcp(
     Ok(())
 }
 
-// Send a message over a tcp stream
-fn tcp_send_msg(ip_addr: &str, msg: &String) {
-    // Create stream and msg
-    let mut stream = TcpStream::connect(ip_addr).unwrap();
-    let msg = msg.as_bytes();
-
-    // Append data type (TEXT) and data size (bytes) to 
-    // the beginning of the message 
-    
-    // Encrypt the message ?
-
-    // Send message and notify client
-    stream.write(msg).unwrap();
-    println!("Sent message");
-}
 
 fn pair(ip_addr: &str,) -> bool {
     let is_paired = false;
@@ -108,10 +93,4 @@ fn pair(ip_addr: &str,) -> bool {
     //is_paired
     is_paired
 
-}
-
-// Open a file and handle possible errors
-fn get_file(file_path: &Path) -> Vec<u8> {
-    // Open file
-    std::fs::read(file_path).unwrap()
 }

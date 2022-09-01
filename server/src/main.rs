@@ -65,6 +65,10 @@ fn decrypt_tcp(
         // Shows the number of bytes read
         println!("{}", read_count);
 
+        // check if the data is a pair_request
+        // if so, break the loop
+        // data could also be a command, handle that appropriately
+
         if read_count == BUFFER_SIZE { 
             // If the buffer is full then expect more packets
             let plaintext = stream_decryptor
@@ -155,29 +159,6 @@ fn handle_connection(mut stream: TcpStream) {
 }
 */
 
-fn recieve_file(&buffer: &[u8; BUFFER_SIZE]) {
-    // If the data is the first packet then:
-        // Create new file and give it the name recieved
-        let file_name = "recieved.txt";
-
-        let mut file = File::options()
-        .append(true)
-        .write(true)
-        .create(true)
-        .open(file_name)
-        .unwrap();
-
-    // Append the buffer to the file
-    file.write(&buffer);
-    //file.write(b"appended");
-    println!("new buffer");
-    
-}
-
-fn recieve_text(buffer: &[u8; BUFFER_SIZE]) {
-    // recieve and print text
-    println!("Message: {}", String::from_utf8_lossy(&buffer[..]));
-}
 
 // Execute a command sent by the client
 fn recieve_cmd(buffer: &[u8; BUFFER_SIZE]) {}
