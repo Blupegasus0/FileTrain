@@ -8,21 +8,21 @@ use chacha20poly1305::{
 use rand::{Rng, RngCore, rngs::OsRng}; 
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use std::fs;
+use std::fs::File;
 use std::path::Path;
 
 const BUFFER_SIZE: usize = 1024;
+const PORT: u16 = 3453;
 
 // Handle all unwrap and error cases after functionality is improved
 
 fn main() -> Result<(), anyhow::Error> {
-    let ip_addr = "localhost:3453";
-    let msg = String::from("never gonna give you up!");
-    //tcp_send_msg(&ip_addr, &msg);
+    let key = [0u8; 32];
+    let nonce = [0u8; 19];
+    let file_path = "test.txt";
+    let ip_addr = String::from("localhost");
 
-    // query file path from user
-    let file_path = Path::new("/home/obsidian/Projects/rust/FileTrain/client/test.txt");
-    tcp_send_file(&ip_addr, &file_path)?;
+    encrypt_tcp(file_path, &key, &nonce, &ip_addr)?;
 
     Ok(())
 
@@ -32,7 +32,11 @@ fn encrypt_tcp(
     source_file_path: &str,
     key: &[u8; 32],
     nonce: &[u8; 19],
+    ip_addr: &String,
 ) -> Result<(), anyhow::Error> {
+    // create socket address
+    let socket = format!("{}:{}", ip_addr, PORT);
+
     // Initialize encryption variables
     let aead = XChaCha20Poly1305::new(key.as_ref().into());
     let mut stream_encryptor = stream::EncryptorBE32::from_aead(aead, nonce.as_ref().into());
@@ -53,7 +57,7 @@ fn encrypt_tcp(
                 .map_err(|e| anyhow!("Encryping large file: {}", e))?;
             
             // Connect to the stream
-            let mut stream = TcpStream::connect("localhost:8081").unwrap();
+            let mut stream = TcpStream::connect(&socket).unwrap();
             //  Write message to the stream
             stream.write(&ciphertext).unwrap();
 
@@ -64,7 +68,7 @@ fn encrypt_tcp(
                 .map_err(|e| anyhow!("Encryping large file: {}", e))?;
             
             // Connect to the stream
-            let mut stream = TcpStream::connect("localhost:8081").unwrap();
+            let mut stream = TcpStream::connect(&socket).unwrap();
             //  Write message to the stream
             stream.write(&ciphertext).unwrap();
 
@@ -74,66 +78,6 @@ fn encrypt_tcp(
 
     Ok(())
 }
-
-// Send file over a tcp stream
-fn tcp_send_file(ip_addr: &str, file_path: &Path)
--> Result<(), anyhow::Error> {
-    // Create stream 
-    let mut stream = TcpStream::connect(ip_addr).unwrap();
-
-    // Append data type(FILE) and file name 
-    // to the beginning of the file
-
-    //////////////////////
-    // Encrypt the file //
-    //////////////////////
-
-    // Create and fill test key and nonce
-    let mut key = [0u8; 32];
-    let mut nonce = [0u8; 19];
-    //key = b"thisismykeyitisreallysupersecret";
-    //nonce = b"thisnonceitissecure";
-    //OsRng.fill_bytes(&mut key);
-    //OsRng.fill_bytes(&mut nonce);
-
-    
-    // Create encryptors 
-    let aead = XChaCha20Poly1305::new(key.as_ref().into());
-    let mut stream_encryptor = stream::EncryptorBE32::from_aead(aead, nonce.as_ref().into());
-
-    const BUFFER_LEN: usize = 500;
-    let mut buffer = [0u8; BUFFER_LEN];
-
-    let mut source_file = fs::File::open(file_path)?;
-
-    loop {
-        let read_count = source_file.read(&mut buffer)?;
-
-        if read_count == BUFFER_LEN {
-            let ciphertext = stream_encryptor
-                .encrypt_next(buffer.as_slice())
-                .map_err(|e| anyhow!("Encryping large file: {}", e))?;
-            
-            stream.write(&ciphertext)?;
-        } else {
-            let ciphertext = stream_encryptor
-                .encrypt_last(&buffer[..read_count])
-                .map_err(|e| anyhow!("Encryping large file: {}", e))?;
-            
-            stream.write(&ciphertext)?;
-            break;
-        }
-    }
-
-    // Send message and notify client
-    
-    // Disabled. Stream being sent from encrypt function
-    //stream.write(&file).unwrap();
-    println!("File sent");
-
-    Ok(())
-}
-
 
 // Send a message over a tcp stream
 fn tcp_send_msg(ip_addr: &str, msg: &String) {

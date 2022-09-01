@@ -7,21 +7,21 @@ use chacha20poly1305::{
 };    
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
-use std::fs;
+use std::fs::File;
 use std::path::Path;
 
 const BUFFER_SIZE: usize = 1024;
 const PORT: u16 = 3453;
 
-fn main() {
-    // create listener and bind it to localhost port 3453
-    let listener = TcpListener::bind("localhost:3453").unwrap();
+fn main() -> Result<(), anyhow::Error> {
+    let key = [0u8; 32];
+    let nonce = [0u8; 19];
+    let file_path = "output.txt";
+    let ip_addr = String::from("localhost");
 
-    // listen for incoming connections
-    for stream in listener.incoming() {
-        let stream = stream.unwrap();
-        handle_connection(stream);
-    }
+    decrypt_tcp(file_path, &key, &nonce, &ip_addr)?;
+
+    Ok(())
 }
 
 // List of data transfer types
@@ -36,9 +36,13 @@ fn decrypt_tcp(
     output_path: &str,
     key: &[u8; 32],
     nonce: &[u8; 19],
+    ip_addr: &String
 ) -> Result<(), anyhow::Error> {
-    // create listener and bind it to localhost port 8081
-    let listener = TcpListener::bind("localhost:8081").unwrap();
+    // create socket address
+    let socket = format!("{}:{}", ip_addr, PORT);
+
+    // create listener and bind it to the socket
+    let listener = TcpListener::bind(socket).unwrap();
     let mut buffer = [0; BUFFER_SIZE];
 
     // Initialize decryption variables 
@@ -87,6 +91,7 @@ fn decrypt_tcp(
 }
 
 
+/* 
 fn handle_connection(mut stream: TcpStream) {
     // Read in buffer and handle any errors
     let mut buffer = [0; BUFFER_SIZE];
@@ -148,13 +153,14 @@ fn handle_connection(mut stream: TcpStream) {
         //data_type::invalid => panic!("Invalid prefix"),
     }
 }
+*/
 
 fn recieve_file(&buffer: &[u8; BUFFER_SIZE]) {
     // If the data is the first packet then:
         // Create new file and give it the name recieved
         let file_name = "recieved.txt";
 
-        let mut file = fs::File::options()
+        let mut file = File::options()
         .append(true)
         .write(true)
         .create(true)
@@ -168,64 +174,12 @@ fn recieve_file(&buffer: &[u8; BUFFER_SIZE]) {
     
 }
 
-
-//// DECRYPTION TEST FUNCTION 
-fn recieve(buffer: &[u8; BUFFER_SIZE]) {
-    // Parameters: 
-    // encrypted_file_path  
-    // output_path
-    // key
-    // nonce
-
-    let output_path = "long_decrypt.txt";
-
-    let mut key = [0u8; 32];
-    let mut nonce = [0u8; 19];
-
-    let aead = XChaCha20Poly1305::new(key.as_ref().into());
-    let mut stream_decryptor = stream::DecryptorBE32::from_aead(aead, nonce.as_ref().into());
-
-    const BUFFER_LEN: usize = 500 + 16;
-    let mut buffer = buffer;
-    //let mut buffer = [0u8; BUFFER_LEN];
-
-
-    //let mut encrypted_file = File::open(encrypted_file_path)?;
-    let mut output_file = fs::File::create(output_path);
-
-    loop {
-        //let read_count = encrypted_file.read(&mut buffer);
-        let read_count = buffer.len();
-
-        if read_count == BUFFER_LEN { 
-            let plaintext = stream_decryptor
-                .decrypt_next(buffer.as_slice())
-                .map_err(|e| anyhow!("Decrypting large file: {}", e));
-
-            println!("{}", String::from_utf8_lossy(&plaintext.unwrap()));
-        } else if read_count == 0 {
-            break;
-        } else {
-            let plaintext = stream_decryptor
-                .decrypt_last(&buffer[..read_count])
-                .map_err(|e| anyhow!("Decrypting large: {}", e));
-
-            println!("{}", String::from_utf8_lossy(&plaintext.unwrap()));
-            break;
-        }
-
-    }
-
-    // recieve and print text
-    println!("Message: {}", String::from_utf8_lossy(&buffer[..]));
-}
-
 fn recieve_text(buffer: &[u8; BUFFER_SIZE]) {
     // recieve and print text
     println!("Message: {}", String::from_utf8_lossy(&buffer[..]));
 }
 
-// Exicute a command sent by the client
+// Execute a command sent by the client
 fn recieve_cmd(buffer: &[u8; BUFFER_SIZE]) {}
 
 // Take in mouse and keyboard input from the client
