@@ -21,17 +21,26 @@ const BUFFER_SIZE: usize = 1024;
 const PORT: u16 = 3453;
 
 fn main() {
-    let server = thread::spawn(|| {
-        run_server();
+    use std::io;
+    let mut input = String::new();
+
+
+    let server_handle = thread::spawn(|| {
+        loop {
+            // run_server();
+            break; //TEMPORARY
+        }
     });
 
-    let client = thread::spawn(|| {
+    let client_handle = thread::spawn(|| {
         run_client();
     });
 
 
-    server.join().unwrap(); // HANDLE ERRORS
-    client.join().unwrap(); // HANDLE ERRORS
+    client_handle.join().unwrap(); // HANDLE ERRORS
+
+
+    server_handle.join().unwrap(); // HANDLE ERRORS
 }
 
 
