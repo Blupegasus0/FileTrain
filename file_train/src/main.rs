@@ -27,7 +27,7 @@ fn main() {
 
     let server_handle = thread::spawn(|| {
         loop {
-            // run_server();
+            run_server();
             break; //TEMPORARY
         }
     });
