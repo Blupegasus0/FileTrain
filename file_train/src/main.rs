@@ -18,6 +18,7 @@ use crate::server::server::run_server;
 
 
 const BUFFER_SIZE: usize = 1024;
+const NONCE: usize = 19;
 const PORT: u16 = 3453;
 
 fn main() {

@@ -2,7 +2,7 @@ pub mod client {
 
     use anyhow::anyhow;
     use chacha20poly1305::{    
-        aead::{stream, Aead, NewAead},                                                                                                                                                            
+        aead::{stream, Aead, AeadCore, NewAead},                                                                                                                                                            
         XChaCha20Poly1305,    
     };    
     use rand::{Rng, RngCore, rngs::OsRng}; 
@@ -22,7 +22,7 @@ pub mod client {
         let file_path = "test.txt";
         let ip_addr = String::from("localhost");
 
-        encrypt_tcp(file_path, &key, &nonce, &ip_addr)?;
+        encrypt_tcp(file_path, &key, &ip_addr)?;
 
         Ok(())
 
@@ -31,7 +31,6 @@ pub mod client {
     fn encrypt_tcp(
         source_file_path: &str,
         key: &[u8; 32],
-        nonce: &[u8; 19],
         ip_addr: &String,
     ) -> Result<(), anyhow::Error> {
         // create socket address
@@ -39,9 +38,16 @@ pub mod client {
 
         // Initialize encryption variables
         let aead = XChaCha20Poly1305::new(key.as_ref().into());
+        let mut nonce = [0u8; 19];  OsRng.fill_bytes(&mut nonce);
+            println!("nonce client: {:?}", nonce);
         let mut stream_encryptor = stream::EncryptorBE32::from_aead(aead, nonce.as_ref().into());
 
         let mut buffer = [0u8; BUFFER_SIZE];
+
+        for i in 0..nonce.len() {
+            // buffer[i] = nonce[i];
+            buffer[i] = 0;
+        }
 
         let mut source_file = File::open(source_file_path)?;
 
@@ -52,25 +58,31 @@ pub mod client {
 
             if read_count == BUFFER_SIZE {
                 // If the buffer is full then expect more data
+                let mut payload = Vec::new();   
+                payload.extend_from_slice(&nonce[..]);
                 let ciphertext = stream_encryptor
-                    .encrypt_next(buffer.as_slice())
+                    .encrypt_next(&buffer[..])
                     .map_err(|e| anyhow!("Encryping large file: {}", e))?;
+                payload.extend_from_slice(&ciphertext[..]);
 
                 // Connect to the stream
                 let mut stream = TcpStream::connect(&socket).unwrap();
                 //  Write message to the stream
-                stream.write(&ciphertext).unwrap();
+                stream.write(&payload).unwrap();
 
             } else {
                 // If the buffer is not full then send the ending packet
+                let mut payload = Vec::new();   
+                payload.extend_from_slice(&nonce[..]);
                 let ciphertext = stream_encryptor
                     .encrypt_last(&buffer[..read_count])
                     .map_err(|e| anyhow!("Encryping large file: {}", e))?;
+                payload.extend_from_slice(&ciphertext[..]);
 
                 // Connect to the stream
                 let mut stream = TcpStream::connect(&socket).unwrap();
                 //  Write message to the stream
-                stream.write(&ciphertext).unwrap();
+                stream.write(&payload).unwrap();
 
                 break;
             }
