@@ -1,6 +1,5 @@
-// use anyhow::anyhow;
-// use std::sync::mpsc;
 use std::thread;
+// use std::sync::mpsc;
 
 pub mod server;
 pub mod client;
@@ -27,13 +26,19 @@ fn main() {
 
     let server_handle = thread::spawn(|| {
         loop {
-            run_server();
+            match run_server() {
+                Err(e) => println!("Error: {e}"), // Displaye error to user
+                Ok(_) => println!("Reception Success"),
+            }
             break; //TEMPORARY
         }
     });
 
     let client_handle = thread::spawn(|| {
-        run_client();
+        match run_client() {
+            Err(e) => println!("Error: {e}"), // Display error to user
+            Ok(_) => println!("Transmission Success"),
+        }
     });
 
 

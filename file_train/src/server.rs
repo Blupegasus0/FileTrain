@@ -2,7 +2,7 @@ pub mod server {
 
     use anyhow::anyhow;
     use chacha20poly1305::{    
-        aead::{stream, NewAead, Error},                                                                                                                                                            
+        aead::{stream, NewAead},                                                                                                                                                            
         XChaCha20Poly1305,    
     };    
     use std::io::{Read, Write};
@@ -19,7 +19,7 @@ pub mod server {
     const MISC_HEADERS: usize = 16;
 
 
-    pub fn run_server() -> Result<(), anyhow::Error> {
+    pub fn run_server() -> anyhow::Result<()> {
         let key = [0u8; 32];
         // let file_path = "output.txt";
         let file_path = "output.pdf";
@@ -34,38 +34,29 @@ pub mod server {
         output_path: &str,
         key: &[u8; 32],
         ip_addr: &String
-    ) -> Result<(), anyhow::Error> {
-        // create socket address
+    ) -> anyhow::Result<()> {
+
         let socket = format!("{}:{}", ip_addr, PORT);
 
         // create listener and bind it to the socket
-        let listener = TcpListener::bind(socket).unwrap();
+        let listener = TcpListener::bind(socket)?;
         let mut buffer = [0; BUFFER_SIZE+METADATA+MISC_HEADERS];
 
-        let aead = XChaCha20Poly1305::new(key.as_ref().into());
-
-        // Use stream as source
         let mut output_file = File::create(output_path)?;
 
-        println!("{:?}", &listener.incoming());
         // listen for incoming connections
         for stream in listener.incoming() {
-            // test to see how many times to loop iterates
-            println!("looped");
 
-            let mut stream = stream.unwrap();
+            let mut stream = stream?;
 
             // Read in buffer, locate nonce
-            let read_count = stream.read(&mut buffer).unwrap();
+            let read_count = stream.read(&mut buffer)?;
             let nonce_start = METADATA - NONCE; let nonce_end = nonce_start + NONCE;
             let nonce = &buffer[nonce_start..nonce_end];
 
             // Initialize decryption variables 
-            let mut stream_decryptor = stream::DecryptorBE32::from_aead(aead.clone(), nonce.into());
-
-            // Shows the number of bytes read
-            println!("read count server: {}", read_count);
-            println!("nonce server: {:?}", &nonce);
+            let aead = XChaCha20Poly1305::new(key[..].into());
+            let mut stream_decryptor = stream::DecryptorBE32::from_aead(aead, nonce.into());
 
             // check if the data is a pair_request
             // if so, break the loop
@@ -73,11 +64,9 @@ pub mod server {
 
             if read_count == buffer.len() { 
                 // If the buffer is full then expect more packets
-                println!("buffer server: {:?}", &buffer[METADATA..].len());
                 let plaintext = stream_decryptor
                     .decrypt_next(&buffer[METADATA..])
-                    // .map_err(|e| anyhow!("Decrypting large file step 1: {}", e))?;
-                    .map_err(|e| anyhow!("Decrypting large file step 1: {}", e)).unwrap();
+                    .map_err(|e| anyhow!("Decrypting large file step 1: {}", e))?;
                 output_file.write(&plaintext)?;
             } else if read_count == 0 {
                 // If there is no more data ... end
@@ -85,12 +74,9 @@ pub mod server {
                 break;
             } else {
                 // If the buffer is neither empty nor full then this is the last packet
-                println!("buffer server: {:?}", &buffer[METADATA..read_count].len());
-                println!("buffer server: {:?}", &buffer[METADATA..read_count]);
                 let plaintext = stream_decryptor
                     .decrypt_last(&buffer[METADATA..read_count])
-                    // .map_err(|e| anyhow!("Decrypting large file step 2: {}", e))?;
-                    .map_err(|e| anyhow!("Decrypting large file step 2: {:?}", e)).unwrap();
+                    .map_err(|e| anyhow!("Decrypting large file step 2: {:?}", e))?;
 
                 output_file.write(&plaintext)?;
                 break;
