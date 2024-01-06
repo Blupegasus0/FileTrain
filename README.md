@@ -1,4 +1,4 @@
-### FileTrain
+# FileTrain
 
 File Train is a program designed to allow the encryption and transfer of files and shell commands between two computers on a LAN.
 
@@ -11,8 +11,6 @@ All of this will result in a simple application used to share files and other da
 
 
 ### Policies
-
-FileTrain:
 
 + Uses Password Encryption to secure data
 + Transfers data using TCP
