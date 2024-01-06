@@ -9,16 +9,16 @@ use crate::server::server::run_server;
 
 
 const BUFFER_SIZE: usize = 1024;
-const METADATA: usize = 20;
+const METADATA: usize = 20; 
 const NONCE: usize = 19;
+const TEMP_KEY: [u8; 32] = [0u8; 32];
 const PORT: u16 = 3453;
 
 // List of data transfer types
-enum DataType {
-    File,
-    Pair,
-    Text,
-    Invalid,
+pub mod data_type {
+    pub const PAIR: [u8; 1] = [0u8; 1];
+    pub const FILE: [u8; 1] = [1u8; 1];
+    pub const TEXT: [u8; 1] = [2u8; 1];
 }
 
 
