@@ -5,6 +5,7 @@ pub mod client {
         XChaCha20Poly1305, aead::{stream, NewAead}, 
     };    
     use rand::{RngCore, rngs::OsRng}; 
+    use core::panic;
     use std::io::{Read, Write};
     use std::net::TcpStream;
     use std::fs::File;
@@ -19,7 +20,7 @@ pub mod client {
 
 
     pub fn run_client() -> anyhow::Result<()> {
-        // let file_path = "test.txt";
+        // let file_path = "test_files/test.txt";
         let file_path = "/home/obsidian/WorkDocs/Micro Computers/2 - Loans and using Goal seek.pdf";
         let ip_addr = String::from("localhost");
 
@@ -33,10 +34,17 @@ pub mod client {
         source_file_path: &str,
         ip_addr: &String,
     ) -> anyhow::Result<()> {
-        // create socket address
+        // create socket address and buffer
         let socket = format!("{}:{}", ip_addr, PORT);
-
         let mut buffer = [0u8; BUFFER_SIZE];
+
+        let input_type = "file"; // TEMPORARY - suppoesed to be read in from user
+        let data_type = match input_type {
+            "file" => data_type::FILE,
+            "text" => data_type::TEXT,
+            "pair" => data_type::PAIR,
+            _ => panic!("Invalid input data type"),
+        };
 
         let mut source_file = File::open(source_file_path)
             .map_err(|e| anyhow!("Cannot open source file: {e}"))?;
@@ -52,7 +60,7 @@ pub mod client {
 
             // Add metadata headers
             let mut payload = Vec::new();   
-            payload.extend_from_slice(&data_type::FILE[..]);
+            payload.push(data_type);
             payload.extend_from_slice(&nonce[..]);
 
             if read_count == BUFFER_SIZE {

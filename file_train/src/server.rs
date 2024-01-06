@@ -5,6 +5,7 @@ pub mod server {
         aead::{stream, NewAead},                                                                                                                                                            
         XChaCha20Poly1305,    
     };    
+    use core::panic;
     use std::io::{Read, Write};
     use std::net::TcpListener;
     use std::fs::File;
@@ -22,8 +23,8 @@ pub mod server {
 
 
     pub fn run_server() -> anyhow::Result<()> {
-        // let file_path = "output.txt";
-        let file_path = "output.pdf";
+        // let file_path = "test_files/output.txt";
+        let file_path = "test_files/output.pdf";
         let ip_addr = String::from("localhost");
 
         decrypt_tcp(file_path, &ip_addr)?;
@@ -54,7 +55,7 @@ pub mod server {
 
             // Read in buffer, locate nonce
             let read_count = stream.read(&mut buffer)?;
-            let data_type = &buffer[0..1];
+            let data_type = buffer[0];
             let nonce_start = METADATA - NONCE; let nonce_end = nonce_start + NONCE;
             let nonce = &buffer[nonce_start..nonce_end];
 
@@ -70,14 +71,15 @@ pub mod server {
                 let plaintext = stream_decryptor
                     .decrypt_next(&buffer[METADATA..])
                     .map_err(|e| anyhow!("Decrypting large file step 1: {}", e))?;
-                
-            // check if the data is a pair_request
-            match data_type {
-                // data_type::FILE => {},
-                _ => break,
-            }
 
-                output_file.write(&plaintext)?;
+                // check if the data is a pair_request
+                match data_type {
+                    data_type::FILE => receive_file(&mut output_file, &plaintext)?,
+                    data_type::PAIR => pair(&buffer),
+                    data_type::TEXT => receive_text(&plaintext),
+                    _ => panic!("Invalid data_type header received"),
+                }
+
             } else if read_count == 0 {
                 // If there is no more data ... end
                 println!("no data read");
@@ -88,7 +90,12 @@ pub mod server {
                     .decrypt_last(&buffer[METADATA..read_count])
                     .map_err(|e| anyhow!("Decrypting large file step 2: {:?}", e))?;
 
-                output_file.write(&plaintext)?;
+                match data_type {
+                    data_type::FILE => receive_file(&mut output_file, &plaintext)?,
+                    data_type::PAIR => pair(&buffer),
+                    data_type::TEXT => receive_text(&plaintext),
+                    _ => panic!("Invalid data_type header received"),
+                }
                 break;
             }
 
@@ -97,8 +104,15 @@ pub mod server {
         Ok(())
     }
 
-    fn handle_plaintext(data_type: &[u8; 1], buffer: Vec<u8> ) {
 
+    fn receive_file(output_file: &mut File, plaintext: &Vec<u8>) -> anyhow::Result<()> {
+        output_file.write(&plaintext)?;
+        Ok(())
+    }
+
+    fn receive_text(plaintext: &Vec<u8>) {
+        // maybe handle the formatting a bit better lol
+        println!("{}", String::from_utf8_lossy(plaintext));
     }
 
     // Execute a command sent by the client
@@ -109,7 +123,7 @@ pub mod server {
     fn recieve_input(){}
 
 
-    fn pair(buffer: &[u8; BUFFER_SIZE]) {
+    fn pair(buffer: &[u8; BUFFER_SIZE+METADATA+MISC_HEADERS]) {
         // this is where the key is shared
     }
 

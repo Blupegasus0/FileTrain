@@ -16,9 +16,9 @@ const PORT: u16 = 3453;
 
 // List of data transfer types
 pub mod data_type {
-    pub const PAIR: [u8; 1] = [0u8; 1];
-    pub const FILE: [u8; 1] = [1u8; 1];
-    pub const TEXT: [u8; 1] = [2u8; 1];
+    pub const PAIR: u8 = 0;
+    pub const FILE: u8 = 1;
+    pub const TEXT: u8 = 2;
 }
 
 
