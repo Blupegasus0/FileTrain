@@ -142,7 +142,7 @@ pub mod server {
         let password_key: String = sha1_crypt::hash_with(HashSetup {salt: Some("1"), rounds: ROUNDS, } , password)?;
         let password_key: &[u8] = password_key.as_bytes();
 
-        // Create a symmetrical key `sym_key` (server)
+        // Create a random symmetrical key `sym_key` (server)
         let mut sym_key = [0u8; KEY_LEN];  OsRng.fill_bytes(&mut sym_key); 
 
         // Encrypt the `sym_key` using the `password_key` (server)
@@ -152,7 +152,7 @@ pub mod server {
         let ciphertext = aead.encrypt(nonce.as_ref().into(), sym_key.as_ref())
             .map_err(|e| anyhow!("encryption failed: {e}"))?;
 
-        // Send the cyphertext to the client (syn-ack)
+        // Send the cyphertext (sym_key) to the client (syn-ack)
         let mut payload = Vec::new();   
         payload.push(data_type::PAIR);
         payload.extend_from_slice(&nonce[..]);

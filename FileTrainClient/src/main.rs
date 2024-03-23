@@ -2,11 +2,9 @@ use std::thread;
 use std::time::Duration;
 // use std::sync::mpsc;
 
-pub mod server;
 pub mod client;
 
 use crate::client::client::run_client;
-use crate::server::server::run_server;
 
 
 const BUFFER_SIZE: usize = 1024;
@@ -26,30 +24,11 @@ pub mod data_type {
 
 
 fn main() {
-
-    let server_handle = thread::spawn(|| {
-        loop {
-            match run_server() {
-                Err(e) => println!("Error: {e}"), // Display error to user
-                Ok(_) => println!("Reception Success"),
-            }
-            break; //TEMPORARY
-        }
-    });
-
-    let client_handle = thread::spawn(|| {
-        thread::sleep(Duration::from_millis(10));
-        match run_client() {
+        let _client = match run_client() {
             Err(e) => println!("Error: {e}"), // Display error to user
             Ok(_) => println!("Transmission Success"),
-        }
-    });
+        };
 
-
-    client_handle.join().unwrap(); // HANDLE ERRORS
-
-
-    server_handle.join().unwrap(); // HANDLE ERRORS
 }
 
 
