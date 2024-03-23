@@ -2,20 +2,23 @@ pub mod server {
 
     use anyhow::{anyhow, Ok};
     use chacha20poly1305::{    
-        aead::{stream, NewAead},                                                                                                                                                            
-        XChaCha20Poly1305,    
+        aead::{stream, Aead, NewAead, Buffer}, XChaCha20Poly1305,    
     };    
     use core::panic;
+    use rand::{RngCore, rngs::OsRng}; 
     use std::io::{Read, Write};
-    use std::net::TcpListener;
+    use std::net::{TcpListener, TcpStream};
     use std::fs::File;
+    use pwhash::{sha1_crypt, HashSetup};
     // use std::path::Path;
 
     use crate::METADATA;
     use crate::NONCE;
     use crate::BUFFER_SIZE;
+    use crate::KEY_LEN;
     use crate::PORT;
     use crate::TEMP_KEY;
+    use crate::ROUNDS;
     use crate::data_type;
     // use crate::DataType;
 
@@ -23,28 +26,31 @@ pub mod server {
 
 
     pub fn run_server() -> anyhow::Result<()> {
-        // let file_path = "test_files/output.txt";
-        let file_path = "test_files/output.pdf";
-        let ip_addr = String::from("localhost");
+        let password = String::from("password");
 
-        decrypt_tcp(file_path, &ip_addr)?;
+        decrypt_tcp(&password)?;
 
         Ok(())
     }
 
 
     fn decrypt_tcp(
-        output_path: &str,
-        ip_addr: &String
+        // ip_addr: &String
+        password: &String
     ) -> anyhow::Result<()> {
 
-        let socket = format!("{}:{}", ip_addr, PORT);
+        // let the IP always be localhost
+        let socket = format!("localhost:{}", PORT);
 
         // create listener and bind it to the socket
         let listener = TcpListener::bind(socket)
             .expect("Failed to bind to socket");
         let mut buffer = [0; BUFFER_SIZE+METADATA+MISC_HEADERS];
 
+        let output_path = "test_files/output.pdf";
+        // let output_path = "test_files/output.txt";
+
+        // Overwrites existing file 
         let mut output_file = File::create(output_path)
             .map_err(|e| anyhow!("Creating output file: {e}"))?;
 
@@ -63,6 +69,16 @@ pub mod server {
             let aead = XChaCha20Poly1305::new(TEMP_KEY[..].into());
             let mut stream_decryptor = stream::DecryptorBE32::from_aead(aead, nonce.into());
 
+            // Call the pair function when a pair pair_request is received
+            let _ = match data_type {
+                data_type::PAIR => {
+                    pair(&mut stream, &password).expect("pairing failed"); 
+                    return Ok(());
+                },
+                _ => (),
+            };
+
+
             // if so, break the loop
             // data could also be a command, handle that appropriately
 
@@ -75,7 +91,6 @@ pub mod server {
                 // check if the data is a pair_request
                 match data_type {
                     data_type::FILE => receive_file(&mut output_file, &plaintext)?,
-                    data_type::PAIR => pair(&buffer),
                     data_type::TEXT => receive_text(&plaintext),
                     _ => panic!("Invalid data_type header received"),
                 }
@@ -92,7 +107,6 @@ pub mod server {
 
                 match data_type {
                     data_type::FILE => receive_file(&mut output_file, &plaintext)?,
-                    data_type::PAIR => pair(&buffer),
                     data_type::TEXT => receive_text(&plaintext),
                     _ => panic!("Invalid data_type header received"),
                 }
@@ -116,15 +130,38 @@ pub mod server {
     }
 
     // Execute a command sent by the client
-    fn recieve_cmd(buffer: &[u8; BUFFER_SIZE]) {}
+    // fn recieve_cmd(buffer: &[u8; BUFFER_SIZE]) {}
 
     // Take in mouse and keyboard input from the client
     // Using UDP... ??
-    fn recieve_input(){}
+    // fn recieve_input(){}
 
 
-    fn pair(buffer: &[u8; BUFFER_SIZE+METADATA+MISC_HEADERS]) {
-        // this is where the key is shared
+    fn pair(stream: &mut TcpStream, password: &String) -> anyhow::Result<()> {
+        // Hash the password into a `key_length` (32bit) key called `hash_key` (server)
+        let password_key: String = sha1_crypt::hash_with(HashSetup {salt: Some("1"), rounds: ROUNDS, } , password)?;
+        let password_key: &[u8] = password_key.as_bytes();
+
+        // Create a symmetrical key `sym_key` (server)
+        let mut sym_key = [0u8; KEY_LEN];  OsRng.fill_bytes(&mut sym_key); 
+
+        // Encrypt the `sym_key` using the `password_key` (server)
+        let aead = XChaCha20Poly1305::new((&password_key[..KEY_LEN]).into());
+        let mut nonce = [0u8; NONCE];  OsRng.fill_bytes(&mut nonce); 
+
+        let ciphertext = aead.encrypt(nonce.as_ref().into(), sym_key.as_ref())
+            .map_err(|e| anyhow!("encryption failed: {e}"))?;
+
+        // Send the cyphertext to the client (syn-ack)
+        let mut payload = Vec::new();   
+        payload.push(data_type::PAIR);
+        payload.extend_from_slice(&nonce[..]);
+        payload.extend_from_slice(&ciphertext[..]);
+
+        stream.write(&payload)
+            .map_err(|e| anyhow!("Writing to stream: {e}"))?;
+
+        Ok(())
     }
 
 

@@ -1,4 +1,5 @@
 use std::thread;
+use std::time::Duration;
 // use std::sync::mpsc;
 
 pub mod server;
@@ -9,10 +10,12 @@ use crate::server::server::run_server;
 
 
 const BUFFER_SIZE: usize = 1024;
+const KEY_LEN: usize = 32;
 const METADATA: usize = 20; 
 const NONCE: usize = 19;
-const TEMP_KEY: [u8; 32] = [0u8; 32];
+const TEMP_KEY: [u8; KEY_LEN] = [0u8; KEY_LEN];
 const PORT: u16 = 3453;
+const ROUNDS: Option<u32> = Some(5);
 
 // List of data transfer types
 pub mod data_type {
@@ -27,7 +30,7 @@ fn main() {
     let server_handle = thread::spawn(|| {
         loop {
             match run_server() {
-                Err(e) => println!("Error: {e}"), // Displaye error to user
+                Err(e) => println!("Error: {e}"), // Display error to user
                 Ok(_) => println!("Reception Success"),
             }
             break; //TEMPORARY
@@ -35,6 +38,7 @@ fn main() {
     });
 
     let client_handle = thread::spawn(|| {
+        thread::sleep(Duration::from_millis(10));
         match run_client() {
             Err(e) => println!("Error: {e}"), // Display error to user
             Ok(_) => println!("Transmission Success"),
