@@ -150,7 +150,7 @@ pub mod server {
         let mut nonce = [0u8; NONCE];  OsRng.fill_bytes(&mut nonce); 
 
         let ciphertext = aead.encrypt(nonce.as_ref().into(), sym_key.as_ref())
-            .map_err(|e| anyhow!("encryption failed: {e}"))?;
+            .map_err(|e| anyhow!("sym_key encryption failed: {e}"))?;
 
         // Send the cyphertext (sym_key) to the client (syn-ack)
         let mut payload = Vec::new();   
