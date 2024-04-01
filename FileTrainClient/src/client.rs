@@ -49,8 +49,8 @@ pub mod client {
             "file" => data_type::FILE,
             "text" => data_type::TEXT,
             "pair" => {
-                let _ = pair(&socket, &password)//.expect("pairing failed"); 
-                    .map_err(|e| anyhow!("pairing: {e}"))?; // TEMPORARY
+                let _ = pair(&socket, &password).expect("pairing failed"); 
+                    //.map_err(|e| anyhow!("pairing: {e}"))?; // TEMPORARY
                 return Ok(());
             }
             _ => panic!("Invalid input data type"),

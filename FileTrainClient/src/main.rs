@@ -1,7 +1,3 @@
-use std::thread;
-use std::time::Duration;
-// use std::sync::mpsc;
-
 pub mod client;
 
 use crate::client::client::run_client;
@@ -9,8 +5,8 @@ use crate::client::client::run_client;
 
 const BUFFER_SIZE: usize = 1024;
 const KEY_LEN: usize = 32;
-const METADATA: usize = 20; 
 const NONCE: usize = 19;
+const METADATA: usize = NONCE+1; 
 const TEMP_KEY: [u8; KEY_LEN] = [0u8; KEY_LEN];
 const PORT: u16 = 3453;
 const ROUNDS: Option<u32> = Some(5);
