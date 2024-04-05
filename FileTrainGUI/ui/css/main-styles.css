@@ -1,0 +1,76 @@
+/* Reset default margin and padding */
+body, ul {
+    margin: 0;
+    padding: 0;
+}
+
+/* Style the sidebar menu */
+.sidebar {
+    width: 200px;
+    background-color: #333;
+    height: 100vh; /* Make it full height */
+    position: fixed; /* Fix it to the left side */
+    top: 0;
+    left: 0;
+}
+
+/* Style the menu items */
+.sidebar ul {
+    list-style: none;
+    padding: 20px 0;
+}
+
+.sidebar ul li {
+    margin-bottom: 10px;
+}
+
+.sidebar ul li a {
+    display: block;
+    color: #fff;
+    text-decoration: none;
+    padding: 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.sidebar ul li a:hover {
+    background-color: #555;
+}
+
+/* Style the main content */
+main {
+    margin-left: 200px; /* Make room for the sidebar */
+    padding: 20px;
+}
+
+/* Style the large buttons */
+.buttons {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.buttons button {
+    width: calc(50% - 20px); /* Two buttons per row */
+    margin: 10px;
+    padding: 20px;
+    font-size: 18px;
+    border: none;
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.buttons button:hover {
+    background-color: #0056b3;
+}
+
+.buttons__image-button {
+    background-image: url("../assets/icons/file-upload.svg");
+    background-size: contain; 
+    background-repeat: no-repeat;
+    padding: 10px 20px; 
+    border: none;
+    cursor: pointer;
+}
