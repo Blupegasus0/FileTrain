@@ -4,9 +4,12 @@ body, ul {
     padding: 0;
 }
 
+
+
+
 /* Style the sidebar menu */
 .sidebar {
-    width: 200px;
+    width: 100px;
     background-color: #333;
     height: 100vh; /* Make it full height */
     position: fixed; /* Fix it to the left side */
@@ -37,11 +40,15 @@ body, ul {
     background-color: #555;
 }
 
+
+
 /* Style the main content */
 main {
-    margin-left: 200px; /* Make room for the sidebar */
+    margin-left: 100px; /* Make room for the sidebar */
     padding: 20px;
 }
+
+
 
 /* Style the large buttons */
 .buttons {
@@ -51,6 +58,7 @@ main {
 
 .buttons button {
     width: calc(50% - 20px); /* Two buttons per row */
+    height: calc(50% - 20px);
     margin: 10px;
     padding: 20px;
     font-size: 18px;
@@ -73,4 +81,17 @@ main {
     padding: 10px 20px; 
     border: none;
     cursor: pointer;
+}
+
+#send-text-button {
+    background-image: url("../assets/icons/text.svg");
+}
+#send-command-button {
+    background-image: url("../assets/icons/terminal.svg");
+}
+#send-file-button {
+    background-image: url("../assets/icons/file-upload.svg");
+}
+#pair-button {
+    background-image: url("../assets/icons/link-pair.svg");
 }
