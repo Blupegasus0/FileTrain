@@ -22,3 +22,15 @@ pub mod server {
 
 } // mod serveruse std::io::prelude::*;
 
+#[test]
+fn encrypt() {
+    use sodiumoxide::crypto::secretbox;
+    
+    let key = secretbox::gen_key();
+    let nonce = secretbox::gen_nonce();
+    let plaintext = b"some data";
+    let ciphertext = secretbox::seal(plaintext, &nonce, &key);
+    let their_plaintext = secretbox::open(&ciphertext, &nonce, &key).unwrap();
+    assert!(plaintext == &their_plaintext[..]);
+}
+
