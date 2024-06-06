@@ -3,7 +3,6 @@ pub mod client {
     use std::io::prelude::*;
     use std::net::TcpListener;
 
-    use anyhow::{anyhow, Ok};
 
     pub fn run_client () -> anyhow::Result<()> {
 
@@ -25,13 +24,13 @@ pub mod client {
 
             let plaintext = decrypt(&ciphertext);
 
-            println!("{}", &plaintext?);
+            println!("{}", String::from_utf8(plaintext?)?);
         }
         Ok(())
     }
 
 
-    fn decrypt(ciphertext: &Vec<u8>) -> anyhow::Result<String> {
+    fn decrypt(ciphertext: &Vec<u8>) -> anyhow::Result<Vec<u8>> {
         use chacha20poly1305::{
             aead::{Aead, AeadCore, KeyInit, OsRng},
             ChaCha20Poly1305, Nonce
@@ -45,7 +44,6 @@ pub mod client {
         println!("{:?}",ciphertext);
 
         let plaintext = cipher.decrypt(nonce, &ciphertext[..]).expect("decrypts ciphertext");
-        let message = String::from_utf8(plaintext)?;
-        Ok(message)
+        Ok(plaintext)
     }
 } // mod client
