@@ -25,7 +25,7 @@ pub mod client {
 
             let plaintext = decrypt(&ciphertext);
 
-            println!("{:?}", &plaintext);
+            println!("{}", &plaintext?);
         }
         Ok(())
     }
@@ -38,13 +38,14 @@ pub mod client {
         };
 
 
-        // let key = [0u8; 32].as_ref().into();
-        // let nonce = [0u8; 12].as_ref().into();
+        let key = [0u8; 32].as_ref().into();
+        let nonce = [0u8; 12].as_ref().into();
+        let cipher = ChaCha20Poly1305::new(key);
 
-        // let cipher = ChaCha20Poly1305::new(key);
-        // let plaintext = cipher.decrypt(nonce, ciphertext).expect("decrypts ciphertext");
-        // let message = String::from_utf8_lossy(plaintext.into());
-        // Ok(message)
-        Ok(String::from(""))
+        println!("{:?}",ciphertext);
+
+        let plaintext = cipher.decrypt(nonce, &ciphertext[..]).expect("decrypts ciphertext");
+        let message = String::from_utf8(plaintext)?;
+        Ok(message)
     }
 } // mod client

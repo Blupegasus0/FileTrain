@@ -33,6 +33,7 @@ pub mod server {
         let nonce = [0u8; 12].as_ref().into();
 
         let ciphertext = cipher.encrypt(nonce, plaintext.as_bytes()).expect("encrypts plaintext");
+        println!("{:?}", ciphertext);
 
         Ok(ciphertext)
     }
