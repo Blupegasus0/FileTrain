@@ -1,14 +1,21 @@
 pub mod client {
 
     use std::io::prelude::*;
-    use std::net::TcpStream;
+    use std::net::TcpListener;
 
     pub fn run_client () -> anyhow::Result<()> {
-        let ip_addr = String::from("localhost:8081");
-        let mut stream = TcpStream::connect(ip_addr)?;
+        let ip_addr = "localhost:8081"; //WORKS
 
-        let message = String::from("Hello World @ UWI");
-        stream.write(&message.as_bytes())?;
+        let listener = TcpListener::bind(ip_addr)?;
+
+        // accept connections and process them serially
+        for stream in listener.incoming() {
+            let mut stream = stream.unwrap();
+
+            let mut buffer = [0u8; 1024];
+            stream.read(&mut buffer)?;
+            println!("{}", String::from_utf8_lossy(&buffer));
+        }
         Ok(())
     }
 } // mod client

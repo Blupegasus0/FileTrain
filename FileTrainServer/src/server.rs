@@ -1,40 +1,38 @@
 pub mod server {
 
     use std::io::prelude::*;
-    use std::net::TcpListener;
+    use std::net::TcpStream;
+
+    use anyhow::Ok;
 
 
     pub fn run_server() -> anyhow::Result<()> {
-        let ip_addr = "localhost:8081"; //WORKS
+        let ip_addr = String::from("localhost:8081");
+        let mut stream = TcpStream::connect(ip_addr)?;
 
-        let listener = TcpListener::bind(ip_addr)?;
+        let message = String::from("Hello World @ UWI");
+        let ciphertext = encrypt(&message)?;
 
-        // accept connections and process them serially
-        for stream in listener.incoming() {
-            let mut stream = stream.unwrap();
-
-            let mut buffer = [0u8; 1024];
-            stream.read(&mut buffer)?;
-            println!("{}", String::from_utf8_lossy(&buffer));
-        }
+        stream.write(&ciphertext)?;
         Ok(())
     }
 
-} // mod serveruse std::io::prelude::*;
+    fn encrypt(plaintext: &String) -> anyhow::Result<Vec<u8>> {
 
-#[test]
-fn encrypt() {
-    use sodiumoxide::crypto::secretbox;
-    
-    let key = secretbox::gen_key();
-    let nonce = secretbox::gen_nonce();
+        use chacha20poly1305::{
+            aead::{Aead, AeadCore, KeyInit, OsRng},
+            ChaCha20Poly1305,
+        };
 
-    let plaintext = b"some data";
+        let key = ChaCha20Poly1305::generate_key(&mut OsRng);
 
-    let ciphertext = secretbox::seal(plaintext, &nonce, &key);
+        let cipher = ChaCha20Poly1305::new(&key);
+        // let nonce = ChaCha20Poly1305::generate_nonce(&mut OsRng); // 96-bits; unique per message
+        let nonce = [0u8; 12];
 
-    let their_plaintext = secretbox::open(&ciphertext, &nonce, &key).unwrap();
+        let ciphertext = cipher.encrypt(nonce, plaintext.as_bytes()).expect("encrypts plaintext");
 
-    assert!(plaintext == &their_plaintext[..]);
-}
+        Ok(ciphertext)
+    }
 
+} // mod server
