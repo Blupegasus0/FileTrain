@@ -9,6 +9,25 @@ pub mod client {
     const PAYLOAD_LEN: usize = 2;
 
 
+    // Create a struct for the segment/payload that does the parsing intrinsically to tidy up
+    // decryption function.
+    struct Segment {
+        buffer: [u8; BUFFER],
+    }
+
+    impl Segment {
+        fn get_payload_len() -> u16 {
+            todo!();
+        }
+        fn get_ciphertext() -> &[u8] {
+            todo!();
+        }
+        fn get_nonce() -> &[u8] {
+            todo!();
+        }
+    }
+
+
     pub fn run_client () -> anyhow::Result<()> {
 
         let ip_addr = "localhost:3453"; //WORKS
