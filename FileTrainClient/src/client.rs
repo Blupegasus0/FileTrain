@@ -6,6 +6,7 @@ pub mod client {
     const NONCE: usize = 12;
     const KEY: usize = 32;
     const BUFFER: usize = 1024;
+    const PAYLOAD_LEN: usize = 2;
 
 
     pub fn run_client () -> anyhow::Result<()> {
@@ -42,11 +43,16 @@ pub mod client {
 
 
         let key = [0u8; KEY].as_ref().into();
-        let nonce = &payload[..NONCE];
+        let nonce = &payload[PAYLOAD_LEN..PAYLOAD_LEN+NONCE];
         // let nonce = [0u8; NONCE].as_ref().into();
         let cipher = ChaCha20Poly1305::new(key);
 
-        let ciphertext = &payload[NONCE..];
+        let payload_len = u16::from_be_bytes([payload[PAYLOAD_LEN-2], payload[PAYLOAD_LEN-1]]) as usize;
+        println!("{:?}", &payload[..PAYLOAD_LEN]);
+        println!("{:?}",payload_len);
+
+        // let ciphertext = &payload[PAYLOAD_LEN+NONCE..];
+        let ciphertext = &payload[PAYLOAD_LEN+NONCE..PAYLOAD_LEN+payload_len];
         println!("{:?}",ciphertext);
 
         let plaintext = cipher.decrypt(nonce.into(), &ciphertext[..]).expect("decrypts ciphertext");

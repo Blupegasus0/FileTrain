@@ -5,6 +5,7 @@ pub mod server {
 
     const NONCE: usize = 12;
     const KEY: usize = 32;
+    const PAYLOAD_LEN: usize = 2;
 
 
     pub fn run_server() -> anyhow::Result<()> {
@@ -36,8 +37,10 @@ pub mod server {
 
         let ciphertext = cipher.encrypt(nonce, plaintext.as_bytes()).expect("encrypts plaintext");
 
+        let payload_len = (nonce.len() as u16 + ciphertext.len() as u16).to_be_bytes();
+
         // add nonce as header
-        let mut payload = Vec::new(); payload.append(&mut nonce.to_vec()); payload.append(&mut ciphertext.to_vec());
+        let mut payload = Vec::new(); payload.append(&mut payload_len.to_vec()); payload.append(&mut nonce.to_vec()); payload.append(&mut ciphertext.to_vec());
 
         Ok(payload)
     }
