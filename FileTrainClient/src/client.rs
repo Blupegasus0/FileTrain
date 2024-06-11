@@ -16,14 +16,21 @@ pub mod client {
     }
 
     impl Segment {
-        fn get_payload_len() -> u16 {
-            todo!();
+        fn new() -> Segment {
+            Segment {
+                buffer: [0u8; BUFFER]
+            }
         }
-        fn get_ciphertext() -> &[u8] {
-            todo!();
+
+        fn get_payload_len(&self) -> usize {
+            u16::from_be_bytes([self.buffer[PAYLOAD_LEN-2], self.buffer[PAYLOAD_LEN-1]]) as usize
         }
-        fn get_nonce() -> &[u8] {
-            todo!();
+        fn get_ciphertext(&self) -> &[u8] {
+            let payload_len = u16::from_be_bytes([self.buffer[PAYLOAD_LEN-2], self.buffer[PAYLOAD_LEN-1]]) as usize;
+            &self.buffer[PAYLOAD_LEN+NONCE..PAYLOAD_LEN+payload_len]
+        }
+        fn get_nonce(&self) -> &[u8] {
+            &self.buffer[PAYLOAD_LEN..PAYLOAD_LEN+NONCE]
         }
     }
 
@@ -40,13 +47,13 @@ pub mod client {
         for stream in listener.incoming() {
             let mut stream = stream.unwrap();
 
-            let mut buffer = [0u8; BUFFER];
-            let read_count = stream.read(&mut buffer)?;
+            let mut segment = Segment::new();
+            let read_count = stream.read(&mut segment.buffer)?;
             
-            let ciphertext_range = 0..read_count;
-            let ciphertext: Vec<u8> = buffer[ciphertext_range].to_vec();
+            let ciphertext = segment.get_ciphertext();
+            let nonce = segment.get_nonce();
 
-            let plaintext = decrypt(&ciphertext);
+            let plaintext = decrypt(&ciphertext, &nonce);
 
             println!("{}", String::from_utf8(plaintext?)?);
         }
@@ -54,7 +61,22 @@ pub mod client {
     }
 
 
-    fn decrypt(payload: &Vec<u8>) -> anyhow::Result<Vec<u8>> {
+    fn decrypt(ciphertext: &[u8], nonce: &[u8]) -> anyhow::Result<Vec<u8>> {
+        use chacha20poly1305::{
+            aead::{Aead, AeadCore, KeyInit, OsRng},
+            ChaCha20Poly1305, Nonce
+        };
+
+        let key = [0u8; KEY].as_ref().into();
+        // let nonce = &payload[PAYLOAD_LEN..PAYLOAD_LEN+NONCE];
+
+        let cipher = ChaCha20Poly1305::new(key);
+
+        let plaintext = cipher.decrypt(nonce.into(), &ciphertext[..]).expect("decrypts ciphertext");
+        Ok(plaintext)
+    }
+
+    fn decrypt_old(payload: &Vec<u8>) -> anyhow::Result<Vec<u8>> {
         use chacha20poly1305::{
             aead::{Aead, AeadCore, KeyInit, OsRng},
             ChaCha20Poly1305, Nonce
@@ -63,7 +85,7 @@ pub mod client {
 
         let key = [0u8; KEY].as_ref().into();
         let nonce = &payload[PAYLOAD_LEN..PAYLOAD_LEN+NONCE];
-        // let nonce = [0u8; NONCE].as_ref().into();
+
         let cipher = ChaCha20Poly1305::new(key);
 
         let payload_len = u16::from_be_bytes([payload[PAYLOAD_LEN-2], payload[PAYLOAD_LEN-1]]) as usize;
