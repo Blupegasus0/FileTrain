@@ -1,0 +1,7 @@
+{
+  "author": "Blupegasus0",
+  "description": "Server program for FileTrain - Encrypts and sends data to the client program.",
+  "version": "0.0.2",
+  "project": "FileTrain",
+  "help_post_text": "More info at https://github.com/Blupegasus0/FileTrain"
+}
