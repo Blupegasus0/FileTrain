@@ -1,41 +1,38 @@
 pub mod server {
     use std::io::prelude::*;
     use std::net::TcpStream;
+    use pwhash::{sha1_crypt, HashSetup};
+    use chacha20poly1305::{
+        aead::{Aead, KeyInit, OsRng},
+        ChaCha20Poly1305,
+        AeadCore,
+    };
     use anyhow::Ok;
 
     const NONCE: usize = 12;
     const KEY: usize = 32;
+    const BUFFER: usize = 1024;
     const PAYLOAD_LEN: usize = 2;
 
 
     pub fn run_server() -> anyhow::Result<()> {
-        let ip_addr = String::from("localhost:3453");
-        let mut stream = TcpStream::connect(ip_addr)?;
+        let socket_addr = String::from("localhost:3453");
+        let mut stream = TcpStream::connect(socket_addr)?;
 
-        // let message = String::from("Hello World @ UWI");
-        let message = String::from("Different test");
+        let message = String::from("Hello World @ UWI");
         let ciphertext = encrypt(&message)?;
 
         stream.write(&ciphertext)?;
-        stream.write(b"hello?")?;
         Ok(())
     }
 
     fn encrypt(plaintext: &String) -> anyhow::Result<Vec<u8>> {
-        use chacha20poly1305::{
-            aead::{Aead, KeyInit, OsRng},
-            ChaCha20Poly1305,
-        };
+        let key = [0u8; KEY].into();
+        let cipher = ChaCha20Poly1305::new(&key);
 
-        // let key = ChaCha20Poly1305::generate_key(&mut OsRng);
-        let key = [0u8; KEY].as_ref().into();
+        let nonce = ChaCha20Poly1305::generate_nonce(&mut OsRng); // 96-bits; unique per message
 
-        let cipher = ChaCha20Poly1305::new(key);
-
-        // let nonce = ChaCha20Poly1305::generate_nonce(&mut OsRng); // 96-bits; unique per message
-        let nonce = [0u8; NONCE].as_ref().into();
-
-        let ciphertext = cipher.encrypt(nonce, plaintext.as_bytes()).expect("encrypts plaintext");
+        let ciphertext = cipher.encrypt(&nonce, plaintext.as_bytes()).expect("encrypts plaintext");
 
         let payload_len = (nonce.len() as u16 + ciphertext.len() as u16).to_be_bytes();
 
@@ -45,4 +42,46 @@ pub mod server {
         Ok(payload)
     }
 
+
+    fn pair() -> Vec<u8> {
+
+        sha1_crypt::hash_with(
+            "$sha1$19703$iVdJqfSE$v4qYKl1zqYThwpjJAoKX6UvlHq/a",
+            "password"
+        ).unwrap();
+
+
+        // fetch the pw from the database
+        let pw = b"very_strong_password";
+
+        // send pair request segment (syn)
+
+        // hash pw to create pw_key
+        // decrypt sym_key using pw_key
+
+        // use sym_key to send segments
+        let sym_key: [u8; KEY] = [0u8; KEY].into();
+        sym_key.to_vec()
+
+    }
+
+
+
+    #[test]
+    fn hash_this_mf() {
+        let hash_setup = HashSetup {
+            salt: Some("goodsalt"),
+            rounds: Some(8),
+        };
+
+        let my_lil_key = sha1_crypt::hash_with(
+            hash_setup,
+            "password"
+        ).unwrap();
+
+        println!("{:?}", my_lil_key);
+    }
+
 } // mod server
+
+

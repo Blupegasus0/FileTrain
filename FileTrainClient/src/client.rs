@@ -2,6 +2,14 @@ pub mod client {
 
     use std::io::prelude::*;
     use std::net::TcpListener;
+    use pwhash::{sha1_crypt, HashSetup};
+    use chacha20poly1305::{
+        aead::{Aead, KeyInit, OsRng},
+        ChaCha20Poly1305,
+        AeadCore,
+    };
+    use anyhow::Ok;
+
 
     const NONCE: usize = 12;
     const KEY: usize = 32;
@@ -37,19 +45,16 @@ pub mod client {
 
     pub fn run_client () -> anyhow::Result<()> {
 
-        let ip_addr = "localhost:3453"; //WORKS
-
-        let listener = TcpListener::bind(ip_addr)?;
-
-        println!("read nothing");
+        let socket_addr = "localhost:3453"; //WORKS
+        let listener = TcpListener::bind(socket_addr)?;
 
         // accept connections and process them serially
         for stream in listener.incoming() {
             let mut stream = stream.unwrap();
 
             let mut segment = Segment::new();
-            let read_count = stream.read(&mut segment.buffer)?;
-            
+            let _read_count = stream.read(&mut segment.buffer)?;
+
             let ciphertext = segment.get_ciphertext();
             let nonce = segment.get_nonce();
 
@@ -62,13 +67,7 @@ pub mod client {
 
 
     fn decrypt(ciphertext: &[u8], nonce: &[u8]) -> anyhow::Result<Vec<u8>> {
-        use chacha20poly1305::{
-            aead::{Aead, AeadCore, KeyInit, OsRng},
-            ChaCha20Poly1305, Nonce
-        };
-
         let key = [0u8; KEY].as_ref().into();
-        // let nonce = &payload[PAYLOAD_LEN..PAYLOAD_LEN+NONCE];
 
         let cipher = ChaCha20Poly1305::new(key);
 
@@ -76,27 +75,31 @@ pub mod client {
         Ok(plaintext)
     }
 
-    fn decrypt_old(payload: &Vec<u8>) -> anyhow::Result<Vec<u8>> {
-        use chacha20poly1305::{
-            aead::{Aead, AeadCore, KeyInit, OsRng},
-            ChaCha20Poly1305, Nonce
+
+    fn pair() -> Vec<u8> {
+        let hash_setup = HashSetup {
+            salt: Some("goodsalt"),
+            rounds: Some(8),
         };
 
+        sha1_crypt::hash_with(
+            hash_setup,
+            "password"
+        ).unwrap();
 
-        let key = [0u8; KEY].as_ref().into();
-        let nonce = &payload[PAYLOAD_LEN..PAYLOAD_LEN+NONCE];
 
-        let cipher = ChaCha20Poly1305::new(key);
+        let sym_key = ChaCha20Poly1305::generate_key(&mut OsRng);
 
-        let payload_len = u16::from_be_bytes([payload[PAYLOAD_LEN-2], payload[PAYLOAD_LEN-1]]) as usize;
-        println!("{:?}", &payload[..PAYLOAD_LEN]);
-        println!("{:?}",payload_len);
+        // fetch the pw from the database
+        let pw = b"very_strong_password";
 
-        // let ciphertext = &payload[PAYLOAD_LEN+NONCE..];
-        let ciphertext = &payload[PAYLOAD_LEN+NONCE..PAYLOAD_LEN+payload_len];
-        println!("{:?}",ciphertext);
+        // hash pw into pw_key
 
-        let plaintext = cipher.decrypt(nonce.into(), &ciphertext[..]).expect("decrypts ciphertext");
-        Ok(plaintext)
+        // encrypt key using pw_key
+        // send encrypted key to client
+
+        // use sym_key to receive segments
+        sym_key.to_vec()
     }
+
 } // mod client
