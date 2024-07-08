@@ -95,6 +95,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "cliparser"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "74bd707b71a46260ab2b8951748cae3010445aced1dc000ef90d4156bcfad5a2"
+
+[[package]]
 name = "cpufeatures"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -145,6 +151,7 @@ version = "0.1.2"
 dependencies = [
  "anyhow",
  "chacha20poly1305",
+ "cliparser",
  "pwhash",
  "rand 0.8.5",
  "serde",
