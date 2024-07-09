@@ -1,4 +1,5 @@
 pub mod server;
+pub mod data_models;
 
 use cliparser::types::{
     Argument, ArgumentHelp, ArgumentOccurrence, ArgumentValueType, CliSpec, CliSpecMetaInfo,
@@ -9,6 +10,7 @@ use std::collections::{HashMap, HashSet};
 use std::{env, process};
 
 use crate::server::server::run_server;
+use crate::data_models::ProgramInfo;
 
 
 fn main() {
@@ -16,17 +18,17 @@ fn main() {
     let args = convert_to_str_vec(&args);
     let mut cli_spec = CliSpec::new();
 
+    let prog_info = read_prog_info();
+
     // Add meta info to support help and version text generation
     cli_spec = cli_spec
         // Get this data from the prog_info.json file
         .set_meta_info(Some(CliSpecMetaInfo {
-            author: Some("Blupegasus0".to_string()),
-            version: Some("0.0.2".to_string()),
-            description: Some("Server program for FileTrain - Encrypts and sends file to the client program.".to_string()),
-            project: Some("FileTrain".to_string()),
-            help_post_text: Some(
-                "See more info at: https://github.com/Blupegasus0/FileTrain".to_string(),
-            ),
+            author: Some(prog_info.author),
+            version: Some(prog_info.version),
+            description: Some(prog_info.description),
+            project: Some(prog_info.project),
+            help_post_text: Some(prog_info.help_post_text),
         }))
         
         .add_command("filetrain_server")
@@ -119,7 +121,7 @@ fn main() {
 
     if parsed_args.contains("help") {
         let help_text = help(&cli_spec);
-        println!("Man Entry\n{}", help_text);
+        println!("{}", help_text);
         process::exit(0);
     }
 
@@ -140,4 +142,21 @@ fn main() {
 
 fn convert_to_str_vec(input: &Vec<String>) -> Vec<&str> {
     input.iter().map(|s| s.as_str()).collect()
+}
+
+
+fn read_prog_info() -> ProgramInfo {
+    use serde::{Deserialize, Serialize};
+    use serde_json::Result;
+    use std::fs::File;
+    use std::io::Read;
+
+    // ** HANDLE ERRORS
+    let mut file = File::open("prog-info.json").expect("open file");
+    let mut file_data = String::new();
+    file.read_to_string(&mut file_data).expect("read file");
+
+    let prog_info: ProgramInfo = serde_json::from_str(&file_data).expect("to json");
+    prog_info
+
 }

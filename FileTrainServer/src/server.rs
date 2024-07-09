@@ -10,8 +10,11 @@ pub mod server {
     };
     use anyhow::Ok;
     use cliparser::{help, parse, version};
+    use toml;
     use std::collections::{HashMap, HashSet};
-    use std::{env, process};
+    use std::{env, process, fs};
+    
+    use crate::data_models::{Config, Database, ProgramInfo};
 
     const NONCE: usize = 12;
     const KEY: usize = 32;
@@ -19,10 +22,9 @@ pub mod server {
     const PAYLOAD_LEN: usize = 2;
     const PORT: usize = 3453;
 
-
     pub fn run_server(arg_map: HashMap<String, Vec<String>>) -> anyhow::Result<()> {
         let ipaddr = &arg_map.get("ip address").unwrap()[0];
-        let socket_addr = format!("{ipaddr}:{PORT}");
+        let socket_addr = format!("{}:{}",ipaddr,PORT);
         // let socket_addr = String::from("localhost:3453");
         let mut stream = TcpStream::connect(socket_addr)?;
 
@@ -90,6 +92,7 @@ pub mod server {
 
         println!("{:?}", my_lil_key);
     }
+
 
 } // mod server
 
