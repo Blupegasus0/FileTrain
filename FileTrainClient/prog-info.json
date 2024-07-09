@@ -1,0 +1,7 @@
+{
+  "author": "Blupegasus0",
+  "description": "Client program for FileTrain - Recieves and decrypts data from the server program.",
+  "version": "0.0.2",
+  "project": "FileTrain",
+  "help_post_text": "More info at https://github.com/Blupegasus0/FileTrain"
+}

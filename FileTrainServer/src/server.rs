@@ -1,4 +1,5 @@
 pub mod server {
+
     use std::io::prelude::*;
     use std::net::TcpStream;
     use pwhash::{sha1_crypt, HashSetup};
@@ -8,20 +9,28 @@ pub mod server {
         AeadCore,
     };
     use anyhow::Ok;
+    use cliparser::{help, parse, version};
+    use std::collections::{HashMap, HashSet};
+    use std::{env, process};
 
     const NONCE: usize = 12;
     const KEY: usize = 32;
     const BUFFER: usize = 1024;
     const PAYLOAD_LEN: usize = 2;
+    const PORT: usize = 3453;
 
 
-    pub fn run_server() -> anyhow::Result<()> {
-        let socket_addr = String::from("localhost:3453");
+    pub fn run_server(arg_map: HashMap<String, Vec<String>>) -> anyhow::Result<()> {
+        let ipaddr = &arg_map.get("ip address").unwrap()[0];
+        let socket_addr = format!("{ipaddr}:{PORT}");
+        // let socket_addr = String::from("localhost:3453");
         let mut stream = TcpStream::connect(socket_addr)?;
 
-        let message = String::from("Hello World @ UWI");
+        let message = &arg_map.get("message").unwrap()[0];
+        // let message = String::from("Hello World @ UWI");
         let ciphertext = encrypt(&message)?;
 
+        // println!("arg_map: {:?}", arg_map.get("message"));
         stream.write(&ciphertext)?;
         Ok(())
     }

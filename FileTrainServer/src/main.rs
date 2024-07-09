@@ -91,31 +91,48 @@ fn main() {
             help: Some(ArgumentHelp::Text(
                 "ip address of the destination host".to_string(),
             )),
+        })
+
+        .add_argument(Argument {
+            name: "password".to_string(),
+            key: vec!["--password".to_string(), "-p".to_string()],
+            argument_occurrence: ArgumentOccurrence::Single,
+            value_type: ArgumentValueType::Single,
+            default_value: Some("localhost".to_string()),
+            help: Some(ArgumentHelp::Text(
+                "ip address of the destination host".to_string(),
+            )),
         });
 
     let result = parse(&args, &cli_spec);
     let parsed_args = parse(&args, &cli_spec).unwrap().arguments;
     // ensure valid arguments
     if !result.is_ok() {
-        eprintln!("Invalid arguments");
+        eprintln!("error: Invalid arguments");
+        process::exit(1);
+    }
+
+    if parsed_args.contains("file") && parsed_args.contains("message") {
+        eprintln!("error: File and Message cannot be sent simultaneously");
         process::exit(1);
     }
 
     if parsed_args.contains("help") {
         let help_text = help(&cli_spec);
         println!("Man Entry\n{}", help_text);
+        process::exit(0);
     }
 
     if parsed_args.contains("version") {
         let version_text = version(&cli_spec);
         println!("{}", version_text);
+        process::exit(0);
     }
-
 
 // =================================================================================
     // Run 
-    let _server = match run_server() {
-        Err(e) => println!("Error: {e}"), // Display error to user
+    let _server = match run_server(result.unwrap().argument_values) {
+        Err(e) => println!("error: {e}"), // Display error to user
         _ => {},
     };
 }

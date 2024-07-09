@@ -9,16 +9,17 @@ pub mod client {
         AeadCore,
     };
     use anyhow::Ok;
-
+    use cliparser::{help, parse, version};
+    use std::collections::{HashMap, HashSet};
+    use std::{env, process};
 
     const NONCE: usize = 12;
     const KEY: usize = 32;
     const BUFFER: usize = 1024;
     const PAYLOAD_LEN: usize = 2;
+    const PORT: usize = 3453;
 
 
-    // Create a struct for the segment/payload that does the parsing intrinsically to tidy up
-    // decryption function.
     struct Segment {
         buffer: [u8; BUFFER],
     }
@@ -43,7 +44,7 @@ pub mod client {
     }
 
 
-    pub fn run_client () -> anyhow::Result<()> {
+    pub fn run_client (arg_map: HashMap<String, Vec<String>>) -> anyhow::Result<()> {
 
         let socket_addr = "localhost:3453"; //WORKS
         let listener = TcpListener::bind(socket_addr)?;
